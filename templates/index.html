@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectrum Prediction App with Plotting</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .title-section {
+    display: flex;
+    align-items: center;   /* vertical alignment */
+    justify-content: space-between; /* push logos to the sides, title centered */
+    margin-bottom: 20px;
+}
+
+.title-section h3 {
+    flex-grow: 1;
+    text-align: center;
+    margin: 0;
+    font-size: 1.8em;
+    color: #333;
+}
+
+.title-section img {
+    max-height: 100px; /* keep logos same size */
+    width: auto;
+}
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .upload-section {
+            border: 2px dashed #ddd;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .upload-section:hover {
+            border-color: #667eea;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin: 5px;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-info {
+            background: #17a2b8;
+        }
+        .btn-info:hover {
+            background: #138496;
+        }
+        .preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 12px;
+        }
+        th {
+            background: #667eea;
+            color: white;
+        }
+        .download-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .plot-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .plot-controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .plot-container {
+            text-align: center;
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .plot-container img {
+            max-width: 50%;
+            height: auto;
+            border-radius: 5px;
+        }
+        .loading {
+            display: none;
+            color: #667eea;
+            font-style: italic;
+        }
+        .sample-selector {
+            margin: 10px;
+        }
+        .sample-selector select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        .plot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .instructions {
+            margin-top: 30px; 
+            padding-top: 20px; 
+            border-top: 1px solid #eee; 
+            color: #666; 
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title-section">
+            <img src="static/background.jfif" alt="Left Logo" class="logo-left">
+            <h3>Neutron Spectrum Prediction </h3>
+            <img src="static/ensia.jfif" alt="Right Logo" class="logo-right">
+        </div>
+        
+        <form action="/predict" method="post" enctype="multipart/form-data">
+            <div class="upload-section">
+                <h3>Upload Test Data (CSV)</h3>
+                <p>Select a CSV file containing count columns for spectrum prediction </p>
+                <input type="file" name="file" accept=".csv" required>
+                <br><br>
+                <button type="submit" class="btn"> Generate Predictions</button>
+            </div>
+        </form>
+
+        {% if preview is defined %}
+        <div class="preview">
+            <h3 class="success">✅ Predictions Generated Successfully!</h3>
+            <p>Generated {{ num_samples }} spectrum predictions with {{ models|length }} bins each.</p>
+            <p>Preview of first 5 predictions:</p>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            {% for col in preview.columns %}
+                            <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in preview.itertuples() %}
+                        <tr>
+                            {% for i in range(1, row|length) %}
+                            <td>{{ "%.4f"|format(row[i]) }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="download-section">
+                <a href="/download" class="btn btn-success">📥 Download Full Results (CSV)</a>
+            </div>
+        </div>
+        
+        {% if show_plots %}
+        <div class="plot-section">
+            <h3>📊 Spectrum Visualization</h3>
+            <p>Explore your predicted spectra with interactive plots:</p>
+            
+            <div class="plot-controls">
+                <div class="sample-selector">
+                    <label for="sampleSelect">Select Sample:</label>
+                    <select id="sampleSelect">
+                        {% for i in range(num_samples) %}
+                        <option value="{{ i }}">Sample {{ i + 1 }}</option>
+                        {% endfor %}
+                    </select>
+                    <button onclick="plotSingle()" class="btn btn-info">Plot Single Spectrum</button>
+                </div>
+                
+             
+            </div>
+            
+            <div class="loading" id="loading">🔄 Generating plot...</div>
+            
+            <div class="plot-container" id="plotContainer" style="display: none;">
+                <img id="plotImage" src="" alt="Spectrum Plot">
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <div class="instructions">
+            <p><strong>Instructions:</strong></p>
+            <ul>
+                <li>Upload a CSV file with columns starting with "count_"</li>
+                <li>The app will normalize the counts and generate spectrum predictions</li>
+                <li>Results include {{ models|length if models is defined else '104' }} spectrum bins</li>
+                <li>Use the plotting tools to visualize individual spectra or compare multiple samples</li>
+                <li>Download the complete predictions as a CSV file</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // File input feedback
+        document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                const uploadSection = document.querySelector('.upload-section');
+                uploadSection.style.borderColor = '#28a745';
+                uploadSection.style.backgroundColor = '#f8fff8';
+            }
+        });
+
+        // Plotting functions
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('plotContainer').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('plotContainer').style.display = 'block';
+        }
+
+        function displayPlot(imageData) {
+            const img = document.getElementById('plotImage');
+            img.src = 'data:image/png;base64,' + imageData;
+            hideLoading();
+        }
+
+        function plotSingle() {
+            showLoading();
+            const sampleIdx = document.getElementById('sampleSelect').value;
+            
+            fetch(`/plot/${sampleIdx}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        hideLoading();
+                    } else {
+                        displayPlot(data.plot);
+                    }
+                })
+                .catch(error => {
+                    alert('Error generating plot: ' + error);
+                    hideLoading();
+                });
+        }
+
+        function plotOverlay() {
+            showLoading();
+            
+            fetch('/plot/overlay')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        hideLoading();
+                    } else {
+                        displayPlot(data.plot);
+                    }
+                })
+                .catch(error => {
+                    alert('Error generating plot: ' + error);
+                    hideLoading();
+                });
+        }
+
+        function plotStatistics() {
+            showLoading();
+            
+            fetch('/plot/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        hideLoading();
+                    } else {
+                        displayPlot(data.plot);
+                    }
+                })
+                .catch(error => {
+                    alert('Error generating plot: ' + error);
+                    hideLoading();
+                });
+        }
+    </script>
+</body>
+</html>
