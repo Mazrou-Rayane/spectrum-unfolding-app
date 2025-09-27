@@ -8,29 +8,42 @@ import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import io
 import base64
-from flask import Flask, request, send_file, render_template, redirect, url_for, jsonify
+from flask import Flask, request, send_file, render_template, redirect, url_for, jsonify, flash
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-here'  # Add secret key for flash messages
 
 # --------------------------
 # 1) Extract Models
 # --------------------------
 if not os.path.exists("models"):
-    with zipfile.ZipFile("xgb_models.zip", "r") as zip_ref:
-        zip_ref.extractall("models")
-    print("📦 Extracted models from xgb_models.zip to models")
+    if os.path.exists("xgb_models.zip"):
+        with zipfile.ZipFile("xgb_models.zip", "r") as zip_ref:
+            zip_ref.extractall("models")
+        print("📦 Extracted models from xgb_models.zip to models")
+    else:
+        print("❌ xgb_models.zip not found!")
 
 # --------------------------
 # 2) Load Models
 # --------------------------
 models = []
-for i in range(len([f for f in os.listdir("models") if f.endswith(".json")])):
-    booster = xgb.Booster()
-    model_path = os.path.join("models", f"xgb_model_{i}.json")
-    booster.load_model(model_path)
-    models.append(booster)
-
-print(f"✅ Loaded {len(models)} models.")
+try:
+    if os.path.exists("models"):
+        model_files = [f for f in os.listdir("models") if f.endswith(".json")]
+        for i in range(len(model_files)):
+            booster = xgb.Booster()
+            model_path = os.path.join("models", f"xgb_model_{i}.json")
+            if os.path.exists(model_path):
+                booster.load_model(model_path)
+                models.append(booster)
+            else:
+                print(f"❌ Model file not found: {model_path}")
+        print(f"✅ Loaded {len(models)} models.")
+    else:
+        print("❌ Models directory not found!")
+except Exception as e:
+    print(f"❌ Error loading models: {e}")
 
 # --------------------------
 # 3) Globals
@@ -219,44 +232,104 @@ def index():
 @app.route("/predict", methods=["POST"])
 def predict():
     global last_output, last_predictions
-    if "file" not in request.files:
-        return redirect(url_for("index"))
-
-    file = request.files["file"]
-    if file.filename == "":
-        return redirect(url_for("index"))
-
-    # Load test CSV
-    test_df = pd.read_csv(file)
-    count_cols = [c for c in test_df.columns if c.startswith("count_")]
-
-    # Normalize counts
-    counts_total = test_df[count_cols].sum(axis=1)
-    counts_total[counts_total == 0] = 1
-    test_df[count_cols] = test_df[count_cols].div(counts_total, axis=0)
-
-    X_test = test_df[count_cols].values
-    dtest = xgb.DMatrix(X_test)
-
-    # Predict with each model (one per spectrum bin)
-    predictions = []
-    for booster in models:
-        predictions.append(booster.predict(dtest))
-    predictions = np.column_stack(predictions)
     
-    # Store predictions for plotting
-    last_predictions = predictions
+    try:
+        print("🚀 Starting prediction process...")
+        
+        # Check if models are loaded
+        if not models:
+            flash("❌ No models loaded. Please check if model files exist.", "error")
+            return redirect(url_for("index"))
+        
+        # Check file upload
+        if "file" not in request.files:
+            flash("❌ No file uploaded.", "error")
+            return redirect(url_for("index"))
 
-    # Save predictions
-    pred_df = pd.DataFrame(predictions, columns=[f"spectrum_value_{i+1}" for i in range(predictions.shape[1])])
-    last_output = "predictions.csv"
-    pred_df.to_csv(last_output, index=False)
+        file = request.files["file"]
+        if file.filename == "":
+            flash("❌ No file selected.", "error")
+            return redirect(url_for("index"))
 
-    # Send preview (first 5 rows)
-    preview = pred_df.head(5).round(4)
+        print(f"📁 Processing file: {file.filename}")
 
-    return render_template("index.html", preview=preview, models=models, 
-                         num_samples=len(predictions), show_plots=True)
+        # Load test CSV
+        try:
+            test_df = pd.read_csv(file)
+            print(f"📊 CSV loaded successfully. Shape: {test_df.shape}")
+            print(f"📊 Columns: {list(test_df.columns)}")
+        except Exception as e:
+            flash(f"❌ Error reading CSV file: {str(e)}", "error")
+            return redirect(url_for("index"))
+        
+        # Find count columns
+        count_cols = [c for c in test_df.columns if c.startswith("count_")]
+        print(f"🔢 Found {len(count_cols)} count columns: {count_cols}")
+        
+        if not count_cols:
+            flash("❌ No columns starting with 'count_' found in the CSV file.", "error")
+            return redirect(url_for("index"))
+
+        # Normalize counts
+        try:
+            counts_total = test_df[count_cols].sum(axis=1)
+            counts_total[counts_total == 0] = 1
+            test_df[count_cols] = test_df[count_cols].div(counts_total, axis=0)
+            
+            X_test = test_df[count_cols].values
+            print(f"🧮 Normalized data shape: {X_test.shape}")
+            
+            dtest = xgb.DMatrix(X_test)
+        except Exception as e:
+            flash(f"❌ Error processing data: {str(e)}", "error")
+            return redirect(url_for("index"))
+
+        # Predict with each model (one per spectrum bin)
+        try:
+            print("🤖 Making predictions...")
+            predictions = []
+            for i, booster in enumerate(models):
+                pred = booster.predict(dtest)
+                predictions.append(pred)
+                print(f"✅ Model {i+1}/{len(models)} completed")
+            
+            predictions = np.column_stack(predictions)
+            print(f"📈 Final predictions shape: {predictions.shape}")
+            
+            # Store predictions for plotting
+            last_predictions = predictions
+
+        except Exception as e:
+            flash(f"❌ Error during prediction: {str(e)}", "error")
+            return redirect(url_for("index"))
+
+        # Save predictions
+        try:
+            pred_df = pd.DataFrame(predictions, columns=[f"spectrum_value_{i+1}" for i in range(predictions.shape[1])])
+            last_output = "predictions.csv"
+            pred_df.to_csv(last_output, index=False)
+            print(f"💾 Predictions saved to {last_output}")
+        except Exception as e:
+            flash(f"❌ Error saving predictions: {str(e)}", "error")
+            return redirect(url_for("index"))
+
+        # Send preview (first 5 rows)
+        preview = pred_df.head(5).round(4)
+        
+        flash("✅ Predictions generated successfully!", "success")
+        return render_template("index.html", 
+                             preview=preview, 
+                             models=models, 
+                             num_samples=len(predictions), 
+                             show_plots=True,
+                             success=True)
+
+    except Exception as e:
+        print(f"❌ Unexpected error in predict route: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f"❌ Unexpected error: {str(e)}", "error")
+        return redirect(url_for("index"))
 
 @app.route("/plot/<int:sample_idx>")
 def plot_single(sample_idx):
@@ -301,11 +374,20 @@ def plot_statistics():
 
 @app.route("/download")
 def download():
-    return send_file(last_output, as_attachment=True)
+    try:
+        if os.path.exists(last_output):
+            return send_file(last_output, as_attachment=True)
+        else:
+            flash("❌ No predictions file available for download.", "error")
+            return redirect(url_for("index"))
+    except Exception as e:
+        flash(f"❌ Error downloading file: {str(e)}", "error")
+        return redirect(url_for("index"))
 
 # --------------------------
 # 6) Run
 # --------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    print(f"🌟 Starting Flask app on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=True)  # Enable debug mode

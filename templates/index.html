@@ -5,313 +5,377 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spectrum Prediction App with Plotting</title>
     <style>
-      body {
-    font-family: Arial, sans-serif;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    min-height: 100vh;
-    position: relative;}
-/* Slider Indicators */
-.slider-indicators {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 5px; /* Minimal margin */
-}
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            position: relative;
+        }
 
-.indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ddd;
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
+        /* Flash Messages */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
 
-.indicator.active {
-    background: #667eea;
-}
+        .flash-message {
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
 
-/* Title */
-.title-section {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-.title-section h3 {
-    flex-grow: 1;
-    text-align: center;
-    margin: 0;
-    font-size: 1.8em;
-    color: #333;
-}
-.title-section img {
-    max-height: 100px;
-    width: auto;
-}
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
 
-/* Container */
-.container {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
+        .flash-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
 
-/* Upload section */
-.upload-section {
-    border: 2px dashed #ddd;
-    padding: 20px;
-    text-align: center;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    transition: border-color 0.3s;
-}
-.upload-section:hover {
-    border-color: #667eea;
-}
-input[type="file"] {
-    margin: 10px 0;
-    padding: 10px;
-    width: 100%;
-    max-width: 300px;
-}
+        /* Loading Spinner */
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
 
-/* Buttons */
-.btn {
-    background: #667eea;
-    color: white;
-    padding: 12px 30px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-    margin: 5px;
-    display: inline-block;
-    text-decoration: none;
-}
-.btn:hover {
-    background: #5a6fd8;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-.btn-secondary { background: #6c757d; }
-.btn-secondary:hover { background: #5a6268; }
-.btn-success { background: #28a745; }
-.btn-success:hover { background: #218838; }
-.btn-info { background: #17a2b8; }
-.btn-info:hover { background: #138496; }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
 
-/* Preview Table */
-.preview {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 5px;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-th, td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-    font-size: 12px;
-}
-th {
-    background: #667eea;
-    color: white;
-}
-.download-section { text-align: center; margin-top: 20px; }
-.success { color: #28a745; font-weight: bold; }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-/* Plot Section */
-.plot-section {
-    margin-top: 30px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 5px;
-    border-left: 4px solid #667eea;
-}
-.plot-controls { margin-bottom: 20px; text-align: center; }
-.plot-container {
-    text-align: center;
-    margin-top: 20px;
-    background: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-.plot-container img {
-    max-width: 50%;
-    height: auto;
-    border-radius: 5px;
-}
-.loading { display: none; color: #667eea; font-style: italic; }
-.sample-selector { margin: 10px; }
-.sample-selector select {
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-}
-.plot-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-.instructions {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-    color: #666;
-    font-size: 12px;
-}
+        /* Slider Indicators */
+        .slider-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 5px;
+        }
 
-/* Persona */
-.persona-guide {
-    display: flex;
-    align-items: flex-start;
-    background: #f0f4ff;
-    border: 1px solid #ccd8ff;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-}
-.persona-avatar { font-size: 40px; margin-right: 15px; }
-.persona-text h3 { margin: 0 0 10px 0; color: #334; }
+        .indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ddd;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
 
-/* === FIXED SLIDER === */
-.csv-slider {
-    position: relative;
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto; /* Remove top/bottom margin */
-    overflow: hidden;
-    border-radius: 12px;
-    background: transparent;
-    height: 200px; /* Much larger height */
-}
+        .indicator.active {
+            background: #667eea;
+        }
 
-/* Wrapper to contain buttons outside */
-.slider-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0; /* Remove all margin */
-    padding: 0 100px; /* More space for external buttons */
-}
+        /* Title */
+        .title-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .title-section h3 {
+            flex-grow: 1;
+            text-align: center;
+            margin: 0;
+            font-size: 1.8em;
+            color: #333;
+        }
+        .title-section img {
+            max-height: 100px;
+            width: auto;
+        }
 
-.slide-track {
-    display: flex;
-    transition: transform 0.5s ease-in-out;
-    width: 200%; /* 2 slides total */
-    height: 100%;
-}
+        /* Container */
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
 
-.slide {
-    flex: 0 0 50%; /* Each slide takes 50% of track width (100% of visible area) */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 5px; /* Minimal padding */
-    box-sizing: border-box;
-    background: transparent;
-    height: 100%;
-}
+        /* Upload section */
+        .upload-section {
+            border: 2px dashed #ddd;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .upload-section:hover {
+            border-color: #667eea;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
 
-.slide img {
-    max-width: 100%;
-    max-height: 100%; /* Use almost all available height */
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+        /* Buttons */
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin: 5px;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-info { background: #17a2b8; }
+        .btn-info:hover { background: #138496; }
 
-/* Slider Navigation Buttons */
-.slider-btn {
-    background: rgba(102, 126, 234, 0.9);
-    border: none;
-    color: white;
-    font-size: 2em;
-    padding: 15px 20px;
-    cursor: pointer;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    flex-shrink: 0;
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        /* Preview Table */
+        .preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 12px;
+        }
+        th {
+            background: #667eea;
+            color: white;
+        }
+        .download-section { text-align: center; margin-top: 20px; }
+        .success { color: #28a745; font-weight: bold; }
 
-.slider-btn:hover { 
-    background: rgba(90, 111, 216, 1);
-    transform: scale(1.1);
-}
+        /* Plot Section */
+        .plot-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .plot-controls { margin-bottom: 20px; text-align: center; }
+        .plot-container {
+            text-align: center;
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .plot-container img {
+            max-width: 90%;
+            height: auto;
+            border-radius: 5px;
+        }
+        .loading { display: none; color: #667eea; font-style: italic; }
+        .sample-selector { margin: 10px; }
+        .sample-selector select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        .plot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .instructions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 12px;
+        }
 
-.slider-btn:active {
-    transform: scale(0.95);
-}
+        /* Persona */
+        .persona-guide {
+            display: flex;
+            align-items: flex-start;
+            background: #f0f4ff;
+            border: 1px solid #ccd8ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+        }
+        .persona-avatar { font-size: 40px; margin-right: 15px; }
+        .persona-text h3 { margin: 0 0 10px 0; color: #334; }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .slider-wrapper {
-        padding: 0 80px;
-        margin: 0; /* No margin on mobile */
-    }
-    
-    .csv-slider {
-        max-width: 100%;
-        height: 450px;
-        margin: 0 auto;
-    }
-    
-    .slider-btn {
-        padding: 10px 15px;
-        font-size: 1.5em;
-        width: 50px;
-        height: 50px;
-    }
-    
-    .slide {
-        padding: 5px;
-    }
-}
+        /* === FIXED SLIDER === */
+        .csv-slider {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 12px;
+            background: transparent;
+            height: 200px;
+        }
 
-@media (max-width: 480px) {
-    .slider-wrapper {
-        padding: 0 60px;
-        margin: 0; /* No margin on small mobile */
-    }
-    
-    .csv-slider {
-        height: 350px;
-        margin: 0 auto;
-    }
-    
-    .slider-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 1.3em;
-    }
-}
+        /* Wrapper to contain buttons outside */
+        .slider-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0 100px;
+        }
+
+        .slide-track {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            width: 200%; /* 2 slides total */
+            height: 100%;
+        }
+
+        .slide {
+            flex: 0 0 50%; /* Each slide takes 50% of track width (100% of visible area) */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+            box-sizing: border-box;
+            background: transparent;
+            height: 100%;
+        }
+
+        .slide img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Slider Navigation Buttons */
+        .slider-btn {
+            background: rgba(102, 126, 234, 0.9);
+            border: none;
+            color: white;
+            font-size: 2em;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-btn:hover { 
+            background: rgba(90, 111, 216, 1);
+            transform: scale(1.1);
+        }
+
+        .slider-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .slider-wrapper {
+                padding: 0 80px;
+                margin: 0;
+            }
+            
+            .csv-slider {
+                max-width: 100%;
+                height: 450px;
+                margin: 0 auto;
+            }
+            
+            .slider-btn {
+                padding: 10px 15px;
+                font-size: 1.5em;
+                width: 50px;
+                height: 50px;
+            }
+            
+            .slide {
+                padding: 5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .slider-wrapper {
+                padding: 0 60px;
+                margin: 0;
+            }
+            
+            .csv-slider {
+                height: 350px;
+                margin: 0 auto;
+            }
+            
+            .slider-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.3em;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
         <div class="title-section">
             <img src="static/background.jfif" alt="Left Logo" class="logo-left">
             <h3>Neutron Spectrum Prediction</h3>
@@ -349,26 +413,95 @@ th {
                 </div>
 
                 <p style="text-align: center; font-size: 16px; color: #555; margin-top: 5px;">
-                    <strong>Input:</strong> CSV with  12 count columns → <strong>Output:</strong> Spectrum predictions with 104 values
+                    <strong>Input:</strong> CSV with 12 count columns → <strong>Output:</strong> Spectrum predictions with 104 values
                 </p>
             </div>
         </div>
 
-        <form action="/predict" method="post" enctype="multipart/form-data">
+        <form action="/predict" method="post" enctype="multipart/form-data" id="predictionForm">
             <div class="upload-section">
                 <h3>Upload Test Data (CSV)</h3>
                 <p>Select a CSV file containing count columns for spectrum prediction</p>
-                <input type="file" name="file" accept=".csv" required>
+                <input type="file" name="file" accept=".csv" required id="fileInput">
                 <br><br>
-                <button type="submit" class="btn">🚀 Generate Predictions</button>
+                <button type="submit" class="btn" id="submitBtn">🚀 Generate Predictions</button>
+                
+                <!-- Loading spinner -->
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <p>Generating predictions... This may take a few moments.</p>
+                </div>
             </div>
         </form>
 
-        <!-- Results section (Flask template variables would go here) -->
-        <div class="preview" style="display: none;">
+        <!-- Results section -->
+        {% if preview is defined %}
+        <div class="preview">
             <h3 class="success">✅ Predictions Generated Successfully!</h3>
-            <p>Preview functionality would appear here after form submission.</p>
+            <p><strong>Generated {{ num_samples }} predictions with {{ preview.shape[1] }} spectrum values each.</strong></p>
+            
+            <h4>Preview (First 5 rows):</h4>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Row</th>
+                            {% for col in preview.columns %}
+                            <th>{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for index, row in preview.iterrows() %}
+                        <tr>
+                            <td>{{ index + 1 }}</td>
+                            {% for value in row %}
+                            <td>{{ "%.4f"|format(value) }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="download-section">
+                <a href="/download" class="btn btn-success">📥 Download Full Results (CSV)</a>
+            </div>
         </div>
+
+        <!-- Plot Section -->
+        {% if show_plots %}
+        <div class="plot-section">
+            <h3>📊 Visualization Options</h3>
+            <p>Explore your predictions with interactive plots:</p>
+            
+            <div class="plot-controls">
+                <div class="sample-selector">
+                    <label for="sampleSelect">Select Sample to Plot:</label>
+                    <select id="sampleSelect">
+                        {% for i in range(num_samples) %}
+                        <option value="{{ i }}">Sample {{ i + 1 }}</option>
+                        {% endfor %}
+                    </select>
+                    <button onclick="plotSingle()" class="btn btn-info">📈 Plot Single Sample</button>
+                </div>
+                
+           
+            </div>
+            
+            <div class="loading" id="loading">Generating plot...</div>
+            
+            <div class="plot-container" id="plotContainer" style="display: none;">
+                <img id="plotImage" src="" alt="Spectrum Plot">
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="preview" style="display: none;" id="previewSection">
+            <h3 class="success">✅ Predictions Generated Successfully!</h3>
+            <p>Preview functionality will appear here after form submission.</p>
+        </div>
+        {% endif %}
     </div>
 
     <script>
@@ -433,29 +566,18 @@ th {
             }
         });
 
-        // Plotting functions (for when results are available)
-        function showLoading() {
-            const loading = document.getElementById('loading');
-            const plotContainer = document.getElementById('plotContainer');
-            if (loading) loading.style.display = 'block';
-            if (plotContainer) plotContainer.style.display = 'none';
-        }
+        // Form submission with loading indicator
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+            loadingSpinner.style.display = 'block';
+        });
 
-        function hideLoading() {
-            const loading = document.getElementById('loading');
-            const plotContainer = document.getElementById('plotContainer');
-            if (loading) loading.style.display = 'none';
-            if (plotContainer) plotContainer.style.display = 'block';
-        }
-
-        function displayPlot(imageData) {
-            const img = document.getElementById('plotImage');
-            if (img) {
-                img.src = 'data:image/png;base64,' + imageData;
-                hideLoading();
-            }
-        }
-
+        // Plotting functions
         function plotSingle() {
             showLoading();
             const sampleSelect = document.getElementById('sampleSelect');
@@ -477,6 +599,31 @@ th {
                     alert('Error generating plot: ' + error);
                     hideLoading();
                 });
+        }
+
+    
+
+
+        function showLoading() {
+            const loading = document.getElementById('loading');
+            const plotContainer = document.getElementById('plotContainer');
+            if (loading) loading.style.display = 'block';
+            if (plotContainer) plotContainer.style.display = 'none';
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            const plotContainer = document.getElementById('plotContainer');
+            if (loading) loading.style.display = 'none';
+            if (plotContainer) plotContainer.style.display = 'block';
+        }
+
+        function displayPlot(imageData) {
+            const img = document.getElementById('plotImage');
+            if (img) {
+                img.src = 'data:image/png;base64,' + imageData;
+                hideLoading();
+            }
         }
 
         // Initialize slider
